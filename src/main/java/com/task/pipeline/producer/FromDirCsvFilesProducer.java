@@ -1,6 +1,7 @@
 package com.task.pipeline.producer;
 
 import com.task.pipeline.EntitiesProducer;
+import com.task.pipeline.util.BufferingStreamSplitter;
 import com.task.pipeline.util.MappingResult;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +15,8 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
-import java.util.Collection;
+import java.nio.file.Paths;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -40,21 +40,20 @@ public class FromDirCsvFilesProducer<T> implements EntitiesProducer<T> {
     @Override
     public Stream<? extends T> produce() throws IOException {
         if (!Files.isDirectory(dir)) {
-            throw new NotDirectoryException(dir.toString());
+            throw new NotDirectoryException(dir.toAbsolutePath().toString());
         }
-        try (Stream<Path> files = Files.list(dir)) {
-            return records(files.filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".csv"))
-                    .collect(Collectors.toList())) // eagerly reading list of files to make pipeline effectively parallelizable
-                    .map(MappingResult.wrap(toEntityMapper::apply))
-                    .filter(MappingResult::isSuccessful) // TODO: process entity mapping failures?
-                    .map(MappingResult::getMappedValue);
-        }
+        return entities(records(files(dir)));
     }
 
-    private Stream<CSVRecord> records(Collection<? extends Path> files) {
+    private Stream<? extends T> entities(Stream<CSVRecord> records) {
+        return records
+                .map(MappingResult.wrap(toEntityMapper::apply))
+                .filter(MappingResult::isSuccessful) // TODO: process entity mapping failures?
+                .map(MappingResult::getMappedValue);
+    }
+
+    private Stream<CSVRecord> records(Stream<? extends Path> files) {
         return files
-                .stream()
                 .map(MappingResult.wrap(Files::newBufferedReader))
                 .filter(MappingResult::isSuccessful)
                 .map(MappingResult::getMappedValue)
@@ -62,6 +61,13 @@ public class FromDirCsvFilesProducer<T> implements EntitiesProducer<T> {
                 .peek(this::handleParserInitFailure)
                 .filter(MappingResult::isSuccessful)
                 .flatMap(MappingResult::getMappedValue);
+    }
+
+    private Stream<? extends Path> files(Path dir) throws IOException {
+        return BufferingStreamSplitter.split(
+                Files.list(dir)
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".csv")));
     }
 
     private Stream<CSVRecord> readerRecords(Reader reader) throws IOException {
