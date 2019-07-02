@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
@@ -30,7 +31,8 @@ public class ToCsvFileConsumer<ENTITY> implements EntitiesConsumer<ENTITY> {
     @Override
     public void consume(Stream<? extends ENTITY> entities) throws IOException {
         try (Stream<Object[]> records = entities.map(fromEntityMapper);
-             CSVPrinter printer = new CSVPrinter(Files.newBufferedWriter(file), format)) {
+             Writer writer = Files.newBufferedWriter(file);
+             CSVPrinter printer = new CSVPrinter(writer, format)) {
             for (Object[] record : (Iterable<Object[]>) records::iterator) {
                 printer.printRecord(record);
             }
