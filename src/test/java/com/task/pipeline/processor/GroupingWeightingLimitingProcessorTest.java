@@ -37,7 +37,7 @@ public class GroupingWeightingLimitingProcessorTest {
         // given
         int totalLimit = 1000;
         int inputSize = totalLimit * 2;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor();
+        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
