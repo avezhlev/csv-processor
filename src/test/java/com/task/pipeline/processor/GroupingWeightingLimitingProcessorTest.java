@@ -119,7 +119,9 @@ public class GroupingWeightingLimitingProcessorTest {
                 .allMatch(entity -> {
                     long outputGroupSize = outputGroupSizes.get(entity.getId());
                     return outputGroupSize <= groupLimit
-                            && inputSortedGroups.get(entity.getId()).subList(0, (int) outputGroupSize).contains(entity);
+                            &&
+                            (outputGroupSize == 0
+                                    || entityComparator.compare(entity, inputSortedGroups.get(entity.getId()).get((int) outputGroupSize - 1)) <= 0);
                 });
     }
 
