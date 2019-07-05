@@ -12,18 +12,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class GroupingWeightingLimitingProcessorTest {
+public class GroupingSortingLimitingProcessorTest {
 
     private static final Random random = new Random();
 
     @Test
     public void outputMustBeSortedAccordingToWeightComparator() {
         // given
-        Comparator<Double> weightComparator = Comparator.naturalOrder();
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice, weightComparator);
+        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice);
         int totalLimit = 1000;
         int inputSize = totalLimit;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(weightComparator, Integer.MAX_VALUE, totalLimit);
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(entityComparator, Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -37,7 +36,7 @@ public class GroupingWeightingLimitingProcessorTest {
         // given
         int totalLimit = 1000;
         int inputSize = totalLimit * 2;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(Integer.MAX_VALUE, totalLimit);
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -53,7 +52,7 @@ public class GroupingWeightingLimitingProcessorTest {
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
         int inputSize = totalLimit;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(groupLimit, totalLimit);
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -77,7 +76,23 @@ public class GroupingWeightingLimitingProcessorTest {
         int totalLimit = 10;
         int groupSize = 1;
         int inputSize = totalLimit;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(groupLimit, totalLimit);
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
+        Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
+        // when
+        Stream<? extends SimpleEntity> output = processor.process(input);
+        // then
+        Assertions.assertThat(output)
+                .hasSize(0);
+    }
+
+    @Test
+    public void outputMustBeEmptyIfTotalLimitIsZero() {
+        // given
+        int groupLimit = 1;
+        int totalLimit = 0;
+        int groupSize = 1;
+        int inputSize = 10;
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -89,13 +104,12 @@ public class GroupingWeightingLimitingProcessorTest {
     @Test
     public void outputMustBeSortedAccordingToWeightComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit() {
         // given
-        Comparator<Double> weightComparator = Comparator.naturalOrder();
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice, weightComparator);
+        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice);
         int groupLimit = 20;
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
         int inputSize = totalLimit * 2;
-        GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor = processor(weightComparator, groupLimit, totalLimit);
+        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(entityComparator, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         List<SimpleEntity> collectedInput = input.collect(Collectors.toList());
         Map<Integer, List<SimpleEntity>> inputSortedGroups = collectedInput.stream()
@@ -125,18 +139,14 @@ public class GroupingWeightingLimitingProcessorTest {
                 });
     }
 
-    private GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor() {
-        return GroupingWeightingLimitingProcessor.withDefaultLimits(SimpleEntity::getId, SimpleEntity::getPrice, Comparator.naturalOrder());
-    }
-
-    private GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor(int maxEntitiesPerGroup, long maxTotalEntities) {
-        return new GroupingWeightingLimitingProcessor<>(SimpleEntity::getId, SimpleEntity::getPrice, Comparator.naturalOrder(),
+    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(int maxEntitiesPerGroup, long maxTotalEntities) {
+        return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, Comparator.comparing(SimpleEntity::getPrice),
                 maxEntitiesPerGroup, maxTotalEntities);
     }
 
-    private GroupingWeightingLimitingProcessor<SimpleEntity, Integer, Double> processor(Comparator<Double> weightComparator,
-                                                                                        int maxEntitiesPerGroup, long maxTotalEntities) {
-        return new GroupingWeightingLimitingProcessor<>(SimpleEntity::getId, SimpleEntity::getPrice, weightComparator, maxEntitiesPerGroup, maxTotalEntities);
+    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(Comparator<SimpleEntity> entityComparator,
+                                                                              int maxEntitiesPerGroup, long maxTotalEntities) {
+        return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, entityComparator, maxEntitiesPerGroup, maxTotalEntities);
     }
 
     private Stream<SimpleEntity> withUniqueIdsAndRandomPrices(int count) {
