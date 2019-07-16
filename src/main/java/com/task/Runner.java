@@ -29,7 +29,12 @@ public class Runner {
     private static EntitiesPipeline<Product> defaultPipeline(String inputDir, String outputFile) {
         return new EntitiesPipeline<>(
                 FromDirCsvFilesProducer.withDefaultFormat(Product::parse, Paths.get(inputDir)),
-                GroupingSortingLimitingProcessor.withDefaultLimits(Product::getId, Comparator.comparing(Product::getPrice)),
+                GroupingSortingLimitingProcessor.withDefaultLimits(
+                        Product::getId,
+                        Comparator.comparing(Product::getPrice)
+                                .thenComparing(Product::getId)
+                                .thenComparing(Product::getCondition)
+                                .thenComparing(Product::getState)),
                 ToCsvFileConsumer.withDefaultFormat(Product::asFieldsArray, Paths.get(outputFile)));
     }
 

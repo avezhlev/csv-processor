@@ -7,14 +7,12 @@ import org.junit.jupiter.api.Test;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class GroupingSortingLimitingProcessorTest {
-
-    private static final Random random = new Random();
 
     @Test
     public void outputMustBeSortedAccordingToWeightComparator() {
@@ -139,21 +137,21 @@ public class GroupingSortingLimitingProcessorTest {
                 });
     }
 
-    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(int maxEntitiesPerGroup, long maxTotalEntities) {
+    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(int maxEntitiesPerGroup, int maxTotalEntities) {
         return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, Comparator.comparing(SimpleEntity::getPrice),
                 maxEntitiesPerGroup, maxTotalEntities);
     }
 
     private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(Comparator<SimpleEntity> entityComparator,
-                                                                              int maxEntitiesPerGroup, long maxTotalEntities) {
+                                                                              int maxEntitiesPerGroup, int maxTotalEntities) {
         return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, entityComparator, maxEntitiesPerGroup, maxTotalEntities);
     }
 
     private Stream<SimpleEntity> withUniqueIdsAndRandomPrices(int count) {
-        return IntStream.range(0, count).mapToObj(i -> new SimpleEntity(i, random.nextDouble()));
+        return IntStream.range(0, count).mapToObj(i -> new SimpleEntity(i, ThreadLocalRandom.current().nextDouble()));
     }
 
     private Stream<SimpleEntity> withGroupedIdsAndRandomPrices(int count, int groupSize) {
-        return IntStream.range(0, count).mapToObj(i -> new SimpleEntity(i / groupSize, random.nextDouble()));
+        return IntStream.range(0, count).mapToObj(i -> new SimpleEntity(i / groupSize, ThreadLocalRandom.current().nextDouble()));
     }
 }
