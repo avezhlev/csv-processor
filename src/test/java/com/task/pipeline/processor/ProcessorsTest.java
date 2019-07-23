@@ -2,25 +2,29 @@ package com.task.pipeline.processor;
 
 import com.task.entity.SimpleEntity;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class GroupingSortingLimitingProcessorTest {
+public class ProcessorsTest {
 
-    @Test
-    public void outputMustBeSortedAccordingToWeightComparator() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputMustBeSortedAccordingToWeightComparator(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice);
+        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
         int totalLimit = 1000;
         int inputSize = totalLimit;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(entityComparator, Integer.MAX_VALUE, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, entityComparator, Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -29,12 +33,13 @@ public class GroupingSortingLimitingProcessorTest {
                 .isSortedAccordingTo(entityComparator);
     }
 
-    @Test
-    public void outputMustBeLimitedIfInputExceedsTotalLimit() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputMustBeLimitedIfInputExceedsTotalLimit(Class<? extends EntitiesProcessor> impl) {
         // given
         int totalLimit = 1000;
         int inputSize = totalLimit * 2;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(Integer.MAX_VALUE, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -43,14 +48,15 @@ public class GroupingSortingLimitingProcessorTest {
                 .hasSize(totalLimit);
     }
 
-    @Test
-    public void outputForGroupMustBeLimitedIfAnyInputGroupSizeExceedsNonZeroGroupLimit() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputForGroupMustBeLimitedIfAnyInputGroupSizeExceedsNonZeroGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 20;
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
         int inputSize = totalLimit;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -67,14 +73,15 @@ public class GroupingSortingLimitingProcessorTest {
                 .allMatch(outputGroupSize -> outputGroupSize <= groupLimit);
     }
 
-    @Test
-    public void outputMustBeEmptyIfGroupLimitIsZero() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputMustBeEmptyIfGroupLimitIsZero(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 0;
         int totalLimit = 10;
         int groupSize = 1;
         int inputSize = totalLimit;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -83,14 +90,15 @@ public class GroupingSortingLimitingProcessorTest {
                 .hasSize(0);
     }
 
-    @Test
-    public void outputMustBeEmptyIfTotalLimitIsZero() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputMustBeEmptyIfTotalLimitIsZero(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 1;
         int totalLimit = 0;
         int groupSize = 1;
         int inputSize = 10;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(groupLimit, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
@@ -99,15 +107,16 @@ public class GroupingSortingLimitingProcessorTest {
                 .hasSize(0);
     }
 
-    @Test
-    public void outputMustBeSortedAccordingToWeightComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit() {
+    @ParameterizedTest
+    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    public void outputMustBeSortedAccordingToWeightComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice);
+        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
         int groupLimit = 20;
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
         int inputSize = totalLimit * 2;
-        GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor = processor(entityComparator, groupLimit, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, entityComparator, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         List<SimpleEntity> collectedInput = input.collect(Collectors.toList());
         Map<Integer, List<SimpleEntity>> inputSortedGroups = collectedInput.stream()
@@ -137,14 +146,24 @@ public class GroupingSortingLimitingProcessorTest {
                 });
     }
 
-    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(int maxEntitiesPerGroup, int maxTotalEntities) {
-        return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, Comparator.comparing(SimpleEntity::getPrice),
-                maxEntitiesPerGroup, maxTotalEntities);
+
+    private EntitiesProcessor<SimpleEntity> processor(Class<? extends EntitiesProcessor> impl,
+                                                      int maxEntitiesPerGroup, int maxTotalEntities) {
+        return processor(impl, Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId), maxEntitiesPerGroup, maxTotalEntities);
     }
 
-    private GroupingSortingLimitingProcessor<SimpleEntity, Integer> processor(Comparator<SimpleEntity> entityComparator,
-                                                                              int maxEntitiesPerGroup, int maxTotalEntities) {
-        return new GroupingSortingLimitingProcessor<>(SimpleEntity::getId, entityComparator, maxEntitiesPerGroup, maxTotalEntities);
+    @SuppressWarnings("unchecked")
+    private EntitiesProcessor<SimpleEntity> processor(Class<? extends EntitiesProcessor> impl,
+                                                      Comparator<SimpleEntity> entityComparator,
+                                                      int maxEntitiesPerGroup, int maxTotalEntities) {
+        try {
+            return impl.getDeclaredConstructor(Function.class, Comparator.class, int.class, int.class)
+                    .newInstance(
+                            (Function<SimpleEntity, Integer>) SimpleEntity::getId, entityComparator,
+                            maxEntitiesPerGroup, maxTotalEntities);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Stream<SimpleEntity> withUniqueIdsAndRandomPrices(int count) {

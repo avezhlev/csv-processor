@@ -3,7 +3,7 @@ package com.task;
 import com.task.entity.Product;
 import com.task.pipeline.EntitiesPipeline;
 import com.task.pipeline.consumer.ToCsvFileConsumer;
-import com.task.pipeline.processor.GroupingSortingLimitingProcessor;
+import com.task.pipeline.processor.SpaceOptimizedProcessor;
 import com.task.pipeline.producer.FromDirCsvFilesProducer;
 
 import java.nio.file.Paths;
@@ -29,7 +29,7 @@ public class Runner {
     private static EntitiesPipeline<Product> defaultPipeline(String inputDir, String outputFile) {
         return new EntitiesPipeline<>(
                 FromDirCsvFilesProducer.withDefaultFormat(Product::parse, Paths.get(inputDir)),
-                GroupingSortingLimitingProcessor.withDefaultLimits(
+                SpaceOptimizedProcessor.withDefaultLimits(
                         Product::getId,
                         Comparator.comparing(Product::getPrice)
                                 .thenComparing(Product::getId)

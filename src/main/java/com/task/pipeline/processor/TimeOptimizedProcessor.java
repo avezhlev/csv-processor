@@ -10,8 +10,18 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+/**
+ * Grouping, sorting and limiting processor.
+ * This implementation has O(N*(C1*logK + C2*logM)) time complexity and O(N) space complexity, where
+ * - N is total input size
+ * - M is total output limit
+ * - K is output group size limit
+ *
+ * @param <ENTITY> type of entities to process
+ * @param <GROUP>  type of entities groups identifier
+ */
 @RequiredArgsConstructor
-public class GroupingSortingLimitingProcessor<ENTITY, GROUP> implements EntitiesProcessor<ENTITY> {
+public class TimeOptimizedProcessor<ENTITY, GROUP> implements EntitiesProcessor<ENTITY> {
 
     private static final int DEFAULT_GROUP_LIMIT = 20;
     private static final int DEFAULT_TOTAL_LIMIT = 1000;
@@ -23,9 +33,9 @@ public class GroupingSortingLimitingProcessor<ENTITY, GROUP> implements Entities
     private final int groupLimit;
     private final int totalLimit;
 
-    public static <ENTITY, GROUP> GroupingSortingLimitingProcessor<ENTITY, GROUP>
+    public static <ENTITY, GROUP> TimeOptimizedProcessor<ENTITY, GROUP>
     withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor, Comparator<ENTITY> entityComparator) {
-        return new GroupingSortingLimitingProcessor<>(
+        return new TimeOptimizedProcessor<>(
                 groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
     }
 
