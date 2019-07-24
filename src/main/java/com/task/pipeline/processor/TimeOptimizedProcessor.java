@@ -1,11 +1,13 @@
 package com.task.pipeline.processor;
 
+import com.task.pipeline.processor.util.SimpleLimitedSortedSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -55,101 +57,21 @@ public class TimeOptimizedProcessor<ENTITY, GROUP> implements EntitiesProcessor<
                 .parallelStream()
                 .flatMap(Collection::stream)
                 .collect(Collector.of(
-                        () -> new LimitedSortedSet<>(entityComparator, totalLimit),
-                        LimitedSortedSet<ENTITY>::add,
-                        LimitedSortedSet::combine))
+                        () -> new SimpleLimitedSortedSet<>(entityComparator, totalLimit),
+                        SimpleLimitedSortedSet<ENTITY>::add,
+                        SimpleLimitedSortedSet::merge))
                 .stream();
     }
 
-    private Map<GROUP, LimitedSortedSet<ENTITY>> groups(Stream<? extends ENTITY> entities) {
-        ConcurrentMap<GROUP, LimitedSortedSet<ENTITY>> groups = new ConcurrentHashMap<>();
+    private Map<GROUP, SimpleLimitedSortedSet<ENTITY>> groups(Stream<? extends ENTITY> entities) {
+        Map<GROUP, SimpleLimitedSortedSet<ENTITY>> groups = new ConcurrentHashMap<>();
         entities.parallel().forEach(entity ->
                 groups.compute(groupExtractor.apply(entity), (k, v) -> {
-                    LimitedSortedSet<ENTITY> group = v == null ? new LimitedSortedSet<>(entityComparator, groupLimit) : v;
+                    SimpleLimitedSortedSet<ENTITY> group = v == null ? new SimpleLimitedSortedSet<>(entityComparator, groupLimit) : v;
                     group.add(entity);
                     return group;
                 }));
         return groups;
-    }
-
-
-    private static class LimitedSortedSet<T> extends TreeSet<T> {
-
-        private final Comparator<? super T> comparator;
-        private final int limit;
-
-        public LimitedSortedSet(@NonNull Comparator<? super T> comparator, int limit) {
-            super(comparator);
-            this.comparator = comparator;
-            this.limit = limit;
-        }
-
-        public static <T> LimitedSortedSet<T> combine(LimitedSortedSet<T> first, LimitedSortedSet<T> second) {
-            if (first.size() > second.size()) {
-                first.addAll(second);
-                return first;
-            } else {
-                second.addAll(first);
-                return second;
-            }
-        }
-
-        @Override
-        public boolean add(T item) {
-            if (isCandidateForAdding(item)) {
-                return doAdd(item);
-            }
-            return false;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public boolean addAll(Collection<? extends T> collection) {
-            if (collection.size() == 0) {
-                return false;
-            }
-            if (collection instanceof SortedSet
-                    && Objects.equals(this.comparator, ((SortedSet) collection).comparator())) {
-                return doAddAll((SortedSet<? extends T>) collection);
-            }
-            return doAddAll(collection);
-        }
-
-        private boolean isCandidateForAdding(T item) {
-            return size() < limit || comparator.compare(item, last()) < 0;
-        }
-
-        private boolean doAdd(T item) {
-            boolean added = super.add(item);
-            if (added && size() > limit) {
-                pollLast();
-            }
-            return added;
-        }
-
-        private boolean doAddAll(SortedSet<? extends T> set) {
-            boolean changed = false;
-            for (T item : set) {
-                if (!isCandidateForAdding(item)) {
-                    break;
-                }
-                if (doAdd(item) && !changed) {
-                    changed = true;
-                }
-            }
-            return changed;
-        }
-
-        private boolean doAddAll(Collection<? extends T> collection) {
-            boolean changed = false;
-            for (T item : collection) {
-                if (add(item) && !changed) {
-                    changed = true;
-                }
-            }
-            return changed;
-        }
-
     }
 
 }
