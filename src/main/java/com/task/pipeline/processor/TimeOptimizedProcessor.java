@@ -13,7 +13,6 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
- * Grouping, sorting and limiting processor.
  * This implementation has O(N*(C1*logK + C2*logM)) time complexity and O(N) space complexity, where
  * - N is total input size
  * - M is total output limit
@@ -22,52 +21,30 @@ import java.util.stream.Stream;
  * @param <ENTITY> type of entities to process
  * @param <GROUP>  type of entities groups identifier
  */
-@RequiredArgsConstructor
-public class TimeOptimizedProcessor<ENTITY, GROUP> implements EntitiesProcessor<ENTITY> {
+public class TimeOptimizedProcessor<ENTITY, GROUP> extends AbstractGroupingLimitingSortingProcessor<ENTITY, GROUP> {
 
-    private static final int DEFAULT_GROUP_LIMIT = 20;
-    private static final int DEFAULT_TOTAL_LIMIT = 1000;
+    public TimeOptimizedProcessor(@NonNull Function<? super ENTITY, ? extends GROUP> groupExtractor,
+                                  @NonNull Comparator<? super ENTITY> entityComparator,
+                                  int groupLimit, int totalLimit) {
+        super(groupExtractor, entityComparator, groupLimit, totalLimit);
+    }
 
-    @NonNull
-    private final Function<? super ENTITY, ? extends GROUP> groupExtractor;
-    @NonNull
-    private final Comparator<? super ENTITY> entityComparator;
-    private final int groupLimit;
-    private final int totalLimit;
-
-    public static <ENTITY, GROUP> TimeOptimizedProcessor<ENTITY, GROUP>
-    withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor, Comparator<ENTITY> entityComparator) {
-        return new TimeOptimizedProcessor<>(
-                groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
+    public static <ENTITY, GROUP> TimeOptimizedProcessor<ENTITY, GROUP> withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor,
+                                                                                          Comparator<ENTITY> entityComparator) {
+        return new TimeOptimizedProcessor<>(groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
     }
 
     @Override
-    public Stream<? extends ENTITY> process(Stream<? extends ENTITY> entities) {
-        try {
-            return groupLimit == 0 || totalLimit == 0 ?
-                    Stream.empty() :
-                    flatMapLimitSort(groups(entities));
-        } finally {
-            entities.close();
-        }
-    }
-
-    private Stream<ENTITY> flatMapLimitSort(Map<GROUP, ? extends Collection<ENTITY>> groups) {
-        return groups.values()
-                .parallelStream()
-                .flatMap(Collection::stream)
-                .collect(Collector.of(
-                        () -> new SimpleLimitedSortedSet<>(entityComparator, totalLimit),
-                        SimpleLimitedSortedSet<ENTITY>::add,
-                        SimpleLimitedSortedSet::merge))
-                .stream();
+    protected Stream<? extends ENTITY> groupLimitSort(Stream<? extends ENTITY> entities) {
+        return limitSort(groups(entities).values().stream().flatMap(Collection::stream));
     }
 
     private Map<GROUP, SimpleLimitedSortedSet<ENTITY>> groups(Stream<? extends ENTITY> entities) {
         Map<GROUP, SimpleLimitedSortedSet<ENTITY>> groups = new ConcurrentHashMap<>();
         entities.parallel().forEach(entity ->
-                groups.compute(groupExtractor.apply(entity), (k, v) -> {
-                    SimpleLimitedSortedSet<ENTITY> group = v == null ? new SimpleLimitedSortedSet<>(entityComparator, groupLimit) : v;
+                groups.compute(getGroupExtractor().apply(entity), (k, v) -> {
+                    SimpleLimitedSortedSet<ENTITY> group =
+                            v == null ? new SimpleLimitedSortedSet<>(getEntityComparator(), getGroupLimit()) : v;
                     group.add(entity);
                     return group;
                 }));

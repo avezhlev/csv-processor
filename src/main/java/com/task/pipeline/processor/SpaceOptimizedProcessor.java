@@ -2,7 +2,6 @@ package com.task.pipeline.processor;
 
 import com.task.pipeline.processor.util.GroupingLimitedSortedSet;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.util.Comparator;
 import java.util.function.Function;
@@ -10,7 +9,6 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
- * Grouping, sorting and limiting processor.
  * This implementation has O(N*(M-K)*logM) time complexity but can reach O(M) space complexity, where
  * - N is total input size
  * - M is total output limit
@@ -19,39 +17,25 @@ import java.util.stream.Stream;
  * @param <ENTITY> type of entities to process
  * @param <GROUP>  type of entities groups identifier
  */
-@RequiredArgsConstructor
-public class SpaceOptimizedProcessor<ENTITY, GROUP> implements EntitiesProcessor<ENTITY> {
+public class SpaceOptimizedProcessor<ENTITY, GROUP> extends AbstractGroupingLimitingSortingProcessor<ENTITY, GROUP> {
 
-    private static final int DEFAULT_GROUP_LIMIT = 20;
-    private static final int DEFAULT_TOTAL_LIMIT = 1000;
+    public SpaceOptimizedProcessor(@NonNull Function<? super ENTITY, ? extends GROUP> groupExtractor,
+                                   @NonNull Comparator<? super ENTITY> entityComparator,
+                                   int groupLimit, int totalLimit) {
+        super(groupExtractor, entityComparator, groupLimit, totalLimit);
+    }
 
-    @NonNull
-    private final Function<? super ENTITY, ? extends GROUP> groupExtractor;
-    @NonNull
-    private final Comparator<? super ENTITY> entityComparator;
-    private final int groupLimit;
-    private final int totalLimit;
-
-    public static <ENTITY, GROUP> SpaceOptimizedProcessor<ENTITY, GROUP>
-    withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor, Comparator<ENTITY> entityComparator) {
-        return new SpaceOptimizedProcessor<>(
-                groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
+    public static <ENTITY, GROUP> SpaceOptimizedProcessor<ENTITY, GROUP> withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor,
+                                                                                           Comparator<ENTITY> entityComparator) {
+        return new SpaceOptimizedProcessor<>(groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
     }
 
     @Override
-    public Stream<? extends ENTITY> process(Stream<? extends ENTITY> entities) {
-        try {
-            return groupLimit == 0 || totalLimit == 0 ?
-                    Stream.empty() :
-                    entities.parallel()
-                            .collect(Collector.of(
-                                    () -> new GroupingLimitedSortedSet<>(groupExtractor, entityComparator, groupLimit, totalLimit),
-                                    GroupingLimitedSortedSet<ENTITY, GROUP>::add,
-                                    GroupingLimitedSortedSet::merge))
-                            .stream();
-        } finally {
-            entities.close();
-        }
+    protected Stream<? extends ENTITY> groupLimitSort(Stream<? extends ENTITY> entities) {
+        return entities.parallel().collect(Collector.of(
+                () -> new GroupingLimitedSortedSet<ENTITY, GROUP>(getGroupExtractor(), getEntityComparator(), getGroupLimit(), getTotalLimit()),
+                GroupingLimitedSortedSet::add, GroupingLimitedSortedSet::merge, GroupingLimitedSortedSet::stream,
+                Collector.Characteristics.UNORDERED));
     }
 
 }
