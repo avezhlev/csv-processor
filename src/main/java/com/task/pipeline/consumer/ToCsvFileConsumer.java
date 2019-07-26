@@ -13,23 +13,23 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
-public class ToCsvFileConsumer<ENTITY> implements EntitiesConsumer<ENTITY> {
+public class ToCsvFileConsumer<T> implements EntitiesConsumer<T> {
 
     private static final CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT;
 
     @NonNull
-    private final Function<? super ENTITY, Object[]> fromEntityMapper;
+    private final Function<? super T, Object[]> fromEntityMapper;
     @NonNull
     private final Path file;
     @NonNull
     private final CSVFormat format;
 
-    public static <ENTITY> ToCsvFileConsumer<ENTITY> withDefaultFormat(Function<? super ENTITY, Object[]> fromEntityMapper, Path file) {
+    public static <T> ToCsvFileConsumer<T> withDefaultFormat(Function<? super T, Object[]> fromEntityMapper, Path file) {
         return new ToCsvFileConsumer<>(fromEntityMapper, file, DEFAULT_CSV_FORMAT);
     }
 
     @Override
-    public void consume(Stream<? extends ENTITY> entities) throws IOException {
+    public void consume(Stream<? extends T> entities) throws IOException {
         try (Stream<Object[]> records = entities.map(fromEntityMapper);
              Writer writer = Files.newBufferedWriter(file);
              CSVPrinter printer = new CSVPrinter(writer, format)) {

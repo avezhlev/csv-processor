@@ -12,20 +12,20 @@ import java.util.stream.Stream;
 
 @Getter
 @RequiredArgsConstructor
-public abstract class AbstractGroupingLimitingSortingProcessor<ENTITY, GROUP> implements EntitiesProcessor<ENTITY> {
+public abstract class AbstractGroupingLimitingSortingProcessor<T, ID> implements EntitiesProcessor<T> {
 
     public static final int DEFAULT_GROUP_LIMIT = 20;
     public static final int DEFAULT_TOTAL_LIMIT = 1000;
 
     @NonNull
-    private final Function<? super ENTITY, ? extends GROUP> groupExtractor;
+    private final Function<? super T, ? extends ID> idMapper;
     @NonNull
-    private final Comparator<? super ENTITY> entityComparator;
+    private final Comparator<? super T> comparator;
     private final int groupLimit;
     private final int totalLimit;
 
     @Override
-    public Stream<? extends ENTITY> process(Stream<? extends ENTITY> entities) {
+    public Stream<? extends T> process(Stream<? extends T> entities) {
         try {
             return groupLimit <= 0 || totalLimit <= 0 ?
                     Stream.empty() :
@@ -35,11 +35,11 @@ public abstract class AbstractGroupingLimitingSortingProcessor<ENTITY, GROUP> im
         }
     }
 
-    protected abstract Stream<? extends ENTITY> groupLimitSort(Stream<? extends ENTITY> entities);
+    protected abstract Stream<? extends T> groupLimitSort(Stream<? extends T> entities);
 
-    /*package-private*/ Stream<? extends ENTITY> limitSort(Stream<? extends ENTITY> entities) {
+    /*package-private*/ Stream<? extends T> limitSort(Stream<? extends T> entities) {
         return entities.parallel().collect(Collector.of(
-                () -> new SimpleLimitedSortedSet<ENTITY>(entityComparator, totalLimit),
+                () -> new SimpleLimitedSortedSet<T>(comparator, totalLimit),
                 SimpleLimitedSortedSet::add, SimpleLimitedSortedSet::merge, SimpleLimitedSortedSet::stream,
                 Collector.Characteristics.UNORDERED));
     }

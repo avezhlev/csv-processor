@@ -4,7 +4,7 @@ import lombok.NonNull;
 
 import java.util.*;
 
-public abstract class AbstractLimitedSortedSet<T, TYPE extends AbstractLimitedSortedSet<T, TYPE>> extends TreeSet<T> {
+public abstract class AbstractLimitedSortedSet<T, SELF extends AbstractLimitedSortedSet<T, SELF>> extends TreeSet<T> {
 
     private final Comparator<? super T> comparator;
     private final int limit;
@@ -16,10 +16,10 @@ public abstract class AbstractLimitedSortedSet<T, TYPE extends AbstractLimitedSo
     }
 
     @SuppressWarnings("unchecked")
-    public TYPE merge(TYPE other) {
+    public SELF merge(SELF other) {
         if (this.size() > other.size()) {
             addAll((other));
-            return (TYPE) this;
+            return (SELF) this;
         } else {
             other.addAll(this);
             return other;

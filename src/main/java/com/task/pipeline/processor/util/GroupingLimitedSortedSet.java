@@ -8,46 +8,46 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
 
-public class GroupingLimitedSortedSet<ENTITY, GROUP> extends AbstractLimitedSortedSet<ENTITY, GroupingLimitedSortedSet<ENTITY, GROUP>> {
+public class GroupingLimitedSortedSet<T, ID> extends AbstractLimitedSortedSet<T, GroupingLimitedSortedSet<T, ID>> {
 
-    private final Function<? super ENTITY, ? extends GROUP> groupExtractor;
+    private final Function<? super T, ? extends ID> idMapper;
     private final int groupLimit;
 
-    private final Map<GROUP, Integer> groupSizes = new HashMap<>();
+    private final Map<ID, Integer> groupSizes = new HashMap<>();
 
-    public GroupingLimitedSortedSet(@NonNull Function<? super ENTITY, ? extends GROUP> groupExtractor,
-                                    @NonNull Comparator<? super ENTITY> entityComparator,
+    public GroupingLimitedSortedSet(@NonNull Function<? super T, ? extends ID> idMapper,
+                                    @NonNull Comparator<? super T> comparator,
                                     int groupLimit, int totalLimit) {
-        super(entityComparator, totalLimit);
-        this.groupExtractor = groupExtractor;
+        super(comparator, totalLimit);
+        this.idMapper = idMapper;
         this.groupLimit = groupLimit;
     }
 
     @Override
-    protected boolean doAdd(ENTITY entity) {
-        boolean added = addToSet(entity);
+    protected boolean doAdd(T item) {
+        boolean added = addToSet(item);
         if (added) {
-            GROUP group = groupExtractor.apply(entity);
-            int groupSize = groupSizes.getOrDefault(group, 0) + 1;
+            ID id = idMapper.apply(item);
+            int groupSize = groupSizes.getOrDefault(id, 0) + 1;
             if (groupSize > groupLimit) {
-                Iterator<ENTITY> it = descendingIterator();
-                ENTITY current;
+                Iterator<T> it = descendingIterator();
+                T current;
                 while (it.hasNext()) {
                     current = it.next();
-                    if (group.equals(groupExtractor.apply(current))) {
+                    if (id.equals(idMapper.apply(current))) {
                         it.remove();
-                        if (current == entity) {
+                        if (current == item) {
                             added = false;
                         }
                         break;
                     }
                 }
             } else {
-                groupSizes.put(group, groupSize);
+                groupSizes.put(id, groupSize);
             }
             if (isLimitExceeded()) {
-                ENTITY excluded = pollLast();
-                groupSizes.compute(groupExtractor.apply(excluded), (k, size) ->
+                T excluded = pollLast();
+                groupSizes.compute(idMapper.apply(excluded), (k, size) ->
                         size != null && size > 1 ? size - 1 : null);
             }
         }

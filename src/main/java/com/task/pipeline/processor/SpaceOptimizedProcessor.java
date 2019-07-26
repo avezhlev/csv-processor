@@ -14,26 +14,26 @@ import java.util.stream.Stream;
  * - M is total output limit
  * - K is output group size limit
  *
- * @param <ENTITY> type of entities to process
- * @param <GROUP>  type of entities groups identifier
+ * @param <T>  type of entities to process
+ * @param <ID> type of entities groups identifier
  */
-public class SpaceOptimizedProcessor<ENTITY, GROUP> extends AbstractGroupingLimitingSortingProcessor<ENTITY, GROUP> {
+public class SpaceOptimizedProcessor<T, ID> extends AbstractGroupingLimitingSortingProcessor<T, ID> {
 
-    public SpaceOptimizedProcessor(@NonNull Function<? super ENTITY, ? extends GROUP> groupExtractor,
-                                   @NonNull Comparator<? super ENTITY> entityComparator,
+    public SpaceOptimizedProcessor(@NonNull Function<? super T, ? extends ID> idMapper,
+                                   @NonNull Comparator<? super T> comparator,
                                    int groupLimit, int totalLimit) {
-        super(groupExtractor, entityComparator, groupLimit, totalLimit);
+        super(idMapper, comparator, groupLimit, totalLimit);
     }
 
-    public static <ENTITY, GROUP> SpaceOptimizedProcessor<ENTITY, GROUP> withDefaultLimits(Function<? super ENTITY, ? extends GROUP> groupExtractor,
-                                                                                           Comparator<ENTITY> entityComparator) {
-        return new SpaceOptimizedProcessor<>(groupExtractor, entityComparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
+    public static <T, ID> SpaceOptimizedProcessor<T, ID> withDefaultLimits(Function<? super T, ? extends ID> idMapper,
+                                                                           Comparator<? super T> comparator) {
+        return new SpaceOptimizedProcessor<>(idMapper, comparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
     }
 
     @Override
-    protected Stream<? extends ENTITY> groupLimitSort(Stream<? extends ENTITY> entities) {
+    protected Stream<? extends T> groupLimitSort(Stream<? extends T> entities) {
         return entities.parallel().collect(Collector.of(
-                () -> new GroupingLimitedSortedSet<ENTITY, GROUP>(getGroupExtractor(), getEntityComparator(), getGroupLimit(), getTotalLimit()),
+                () -> new GroupingLimitedSortedSet<T, ID>(getIdMapper(), getComparator(), getGroupLimit(), getTotalLimit()),
                 GroupingLimitedSortedSet::add, GroupingLimitedSortedSet::merge, GroupingLimitedSortedSet::stream,
                 Collector.Characteristics.UNORDERED));
     }

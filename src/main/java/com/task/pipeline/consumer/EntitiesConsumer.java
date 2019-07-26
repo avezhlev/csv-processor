@@ -2,7 +2,7 @@ package com.task.pipeline.consumer;
 
 import java.util.stream.Stream;
 
-public interface EntitiesConsumer<ENTITY> {
+public interface EntitiesConsumer<T> {
 
-    void consume(Stream<? extends ENTITY> entities) throws Exception;
+    void consume(Stream<? extends T> entities) throws Exception;
 }

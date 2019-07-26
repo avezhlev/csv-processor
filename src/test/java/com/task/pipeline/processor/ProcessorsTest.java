@@ -19,18 +19,18 @@ public class ProcessorsTest {
 
     @ParameterizedTest
     @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
-    public void outputMustBeSortedAccordingToWeightComparator(Class<? extends EntitiesProcessor> impl) {
+    public void outputMustBeSortedAccordingToComparator(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
+        Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
         int totalLimit = 1000;
         int inputSize = totalLimit;
-        EntitiesProcessor<SimpleEntity> processor = processor(impl, entityComparator, Integer.MAX_VALUE, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, comparator, Integer.MAX_VALUE, totalLimit);
         Stream<SimpleEntity> input = withUniqueIdsAndRandomPrices(inputSize);
         // when
         Stream<? extends SimpleEntity> output = processor.process(input);
         // then
         Assertions.assertThat(output)
-                .isSortedAccordingTo(entityComparator);
+                .isSortedAccordingTo(comparator);
     }
 
     @ParameterizedTest
@@ -109,14 +109,14 @@ public class ProcessorsTest {
 
     @ParameterizedTest
     @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
-    public void outputMustBeSortedAccordingToWeightComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit(Class<? extends EntitiesProcessor> impl) {
+    public void outputMustBeSortedAccordingToComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> entityComparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
+        Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
         int groupLimit = 20;
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
         int inputSize = totalLimit * 2;
-        EntitiesProcessor<SimpleEntity> processor = processor(impl, entityComparator, groupLimit, totalLimit);
+        EntitiesProcessor<SimpleEntity> processor = processor(impl, comparator, groupLimit, totalLimit);
         Stream<SimpleEntity> input = withGroupedIdsAndRandomPrices(inputSize, groupSize);
         List<SimpleEntity> collectedInput = input.collect(Collectors.toList());
         Map<Integer, List<SimpleEntity>> inputSortedGroups = collectedInput.stream()
@@ -124,7 +124,7 @@ public class ProcessorsTest {
                         SimpleEntity::getId,
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
-                                list -> list.stream().sorted(entityComparator).collect(Collectors.toList()))));
+                                list -> list.stream().sorted(comparator).collect(Collectors.toList()))));
         // when
         Stream<? extends SimpleEntity> output = processor.process(collectedInput.stream());
         // then
@@ -136,13 +136,13 @@ public class ProcessorsTest {
                         Collectors.counting()));
         Assertions.assertThat(collectedOutput)
                 .hasSize(expectedSize)
-                .isSortedAccordingTo(entityComparator)
+                .isSortedAccordingTo(comparator)
                 .allMatch(entity -> {
                     long outputGroupSize = outputGroupSizes.get(entity.getId());
                     return outputGroupSize <= groupLimit
                             &&
                             (outputGroupSize == 0
-                                    || entityComparator.compare(entity, inputSortedGroups.get(entity.getId()).get((int) outputGroupSize - 1)) <= 0);
+                                    || comparator.compare(entity, inputSortedGroups.get(entity.getId()).get((int) outputGroupSize - 1)) <= 0);
                 });
     }
 
@@ -154,12 +154,12 @@ public class ProcessorsTest {
 
     @SuppressWarnings("unchecked")
     private EntitiesProcessor<SimpleEntity> processor(Class<? extends EntitiesProcessor> impl,
-                                                      Comparator<SimpleEntity> entityComparator,
+                                                      Comparator<SimpleEntity> comparator,
                                                       int maxEntitiesPerGroup, int maxTotalEntities) {
         try {
             return impl.getDeclaredConstructor(Function.class, Comparator.class, int.class, int.class)
                     .newInstance(
-                            (Function<SimpleEntity, Integer>) SimpleEntity::getId, entityComparator,
+                            (Function<SimpleEntity, Integer>) SimpleEntity::getId, comparator,
                             maxEntitiesPerGroup, maxTotalEntities);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
             throw new RuntimeException(e);

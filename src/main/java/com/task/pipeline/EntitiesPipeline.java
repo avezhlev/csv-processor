@@ -9,19 +9,19 @@ import lombok.RequiredArgsConstructor;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
-public class EntitiesPipeline<ENTITY> {
+public class EntitiesPipeline<T> {
 
     @NonNull
-    private final EntitiesProducer<ENTITY> entitiesProducer;
+    private final EntitiesProducer<T> producer;
     @NonNull
-    private final EntitiesProcessor<ENTITY> entitiesProcessor;
+    private final EntitiesProcessor<T> processor;
     @NonNull
-    private final EntitiesConsumer<ENTITY> entitiesConsumer;
+    private final EntitiesConsumer<T> consumer;
 
     public void execute() throws Exception {
-        try (Stream<? extends ENTITY> inputPipeline = entitiesProducer.produce();
-             Stream<? extends ENTITY> outputPipeline = entitiesProcessor.process(inputPipeline)) {
-            entitiesConsumer.consume(outputPipeline);
+        try (Stream<? extends T> input = producer.produce();
+             Stream<? extends T> output = processor.process(input)) {
+            consumer.consume(output);
         }
     }
 }

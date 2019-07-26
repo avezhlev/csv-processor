@@ -2,7 +2,7 @@ package com.task.pipeline.processor;
 
 import java.util.stream.Stream;
 
-public interface EntitiesProcessor<ENTITY> {
+public interface EntitiesProcessor<T> {
 
-    Stream<? extends ENTITY> process(Stream<? extends ENTITY> entities);
+    Stream<? extends T> process(Stream<? extends T> entities);
 }

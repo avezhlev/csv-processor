@@ -20,30 +20,29 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @RequiredArgsConstructor
-public class FromDirCsvFilesProducer<ENTITY> implements EntitiesProducer<ENTITY> {
+public class FromDirCsvFilesProducer<T> implements EntitiesProducer<T> {
 
     private static final CSVFormat DEFAULT_CSV_FORMAT = CSVFormat.DEFAULT;
 
     @NonNull
-    private final Function<CSVRecord, ? extends ENTITY> toEntityMapper;
+    private final Function<CSVRecord, ? extends T> toEntityMapper;
     @NonNull
     private final Path dir;
     @NonNull
     private final CSVFormat format;
 
-    public static <ENTITY> FromDirCsvFilesProducer<ENTITY> withDefaultFormat(Function<CSVRecord, ? extends ENTITY> toEntityMapper,
-                                                                             Path dir) {
+    public static <T> FromDirCsvFilesProducer<T> withDefaultFormat(Function<CSVRecord, ? extends T> toEntityMapper,
+                                                                   Path dir) {
         return new FromDirCsvFilesProducer<>(toEntityMapper, dir, DEFAULT_CSV_FORMAT);
     }
 
     @Override
-    public Stream<? extends ENTITY> produce() throws IOException {
+    public Stream<? extends T> produce() throws IOException {
         if (!Files.isDirectory(dir)) {
             throw new NotDirectoryException(dir.toString());
         }
         try (Stream<Path> files = Files.list(dir)) {
-            return records(files
-                    .filter(Files::isRegularFile)
+            return records(files.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".csv"))
                     .collect(Collectors.toList())) // eagerly reading list of files to make pipeline effectively parallelizable
                     .map(MappingResult.wrap(toEntityMapper::apply))
