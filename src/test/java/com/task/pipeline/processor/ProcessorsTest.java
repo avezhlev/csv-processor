@@ -18,7 +18,10 @@ import java.util.stream.Stream;
 public class ProcessorsTest {
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputMustBeSortedAccordingToComparator(Class<? extends EntitiesProcessor> impl) {
         // given
         Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
@@ -34,7 +37,10 @@ public class ProcessorsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputMustBeLimitedIfInputExceedsTotalLimit(Class<? extends EntitiesProcessor> impl) {
         // given
         int totalLimit = 1000;
@@ -49,7 +55,10 @@ public class ProcessorsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputForGroupMustBeLimitedIfAnyInputGroupSizeExceedsNonZeroGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 20;
@@ -74,7 +83,10 @@ public class ProcessorsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputMustBeEmptyIfGroupLimitIsZero(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 0;
@@ -91,7 +103,10 @@ public class ProcessorsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputMustBeEmptyIfTotalLimitIsZero(Class<? extends EntitiesProcessor> impl) {
         // given
         int groupLimit = 1;
@@ -108,7 +123,10 @@ public class ProcessorsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(classes = {TimeOptimizedProcessor.class, SpaceOptimizedProcessor.class})
+    @ValueSource(classes = {
+            TimeOptimizedConcurrentGroupingProcessor.class,
+            TimeOptimizedForkJoinGroupingProcessor.class,
+            SpaceOptimizedProcessor.class})
     public void outputMustBeSortedAccordingToComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
         Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
