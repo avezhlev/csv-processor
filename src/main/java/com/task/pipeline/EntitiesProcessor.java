@@ -1,4 +1,4 @@
-package com.task.pipeline.processor;
+package com.task.pipeline;
 
 import java.util.stream.Stream;
 

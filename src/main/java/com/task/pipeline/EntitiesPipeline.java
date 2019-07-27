@@ -1,8 +1,5 @@
 package com.task.pipeline;
 
-import com.task.pipeline.consumer.EntitiesConsumer;
-import com.task.pipeline.processor.EntitiesProcessor;
-import com.task.pipeline.producer.EntitiesProducer;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 

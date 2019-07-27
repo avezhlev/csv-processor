@@ -1,7 +1,7 @@
 package com.task.pipeline.processor;
 
 import com.task.pipeline.processor.util.EntitiesGrouper;
-import com.task.pipeline.processor.util.SimpleLimitedSortedSet;
+import com.task.pipeline.processor.util.collection.LimitedSortedSet;
 import lombok.NonNull;
 
 import java.util.Comparator;
@@ -36,8 +36,8 @@ public class TimeOptimizedForkJoinGroupingProcessor<T, ID> extends AbstractGroup
         return limitSort(entities.parallel().collect(Collector.of(
                 () -> new EntitiesGrouper<>(
                         getIdMapper(),
-                        () -> new SimpleLimitedSortedSet<T>(getComparator(), getGroupLimit()),
-                        SimpleLimitedSortedSet::add, SimpleLimitedSortedSet::merge),
+                        () -> new LimitedSortedSet<T>(getComparator(), getGroupLimit()),
+                        LimitedSortedSet::add, LimitedSortedSet::merge),
                 EntitiesGrouper::add, EntitiesGrouper::merge, EntitiesGrouper::stream,
                 Collector.Characteristics.UNORDERED)));
     }

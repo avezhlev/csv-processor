@@ -1,5 +1,6 @@
 package com.task.pipeline.producer;
 
+import com.task.pipeline.EntitiesProducer;
 import com.task.pipeline.util.MappingResult;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

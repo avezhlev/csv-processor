@@ -1,4 +1,4 @@
-package com.task.pipeline.processor.util;
+package com.task.pipeline.processor.util.collection;
 
 import lombok.NonNull;
 
@@ -36,11 +36,11 @@ public abstract class AbstractLimitedSortedSet<T, SELF extends AbstractLimitedSo
 
     protected abstract boolean doAdd(T item);
 
-    /*package-private*/ boolean addToSet(T item) {
+    protected boolean addToSet(T item) {
         return super.add(item);
     }
 
-    /*package-private*/ boolean isLimitExceeded() {
+    protected boolean isLimitExceeded() {
         return size() > limit;
     }
 

@@ -1,5 +1,6 @@
 package com.task.pipeline.consumer;
 
+import com.task.pipeline.EntitiesConsumer;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;

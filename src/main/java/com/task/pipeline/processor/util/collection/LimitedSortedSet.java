@@ -1,12 +1,12 @@
-package com.task.pipeline.processor.util;
+package com.task.pipeline.processor.util.collection;
 
 import lombok.NonNull;
 
 import java.util.Comparator;
 
-public class SimpleLimitedSortedSet<T> extends AbstractLimitedSortedSet<T, SimpleLimitedSortedSet<T>> {
+public class LimitedSortedSet<T> extends AbstractLimitedSortedSet<T, LimitedSortedSet<T>> {
 
-    public SimpleLimitedSortedSet(@NonNull Comparator<? super T> comparator, int limit) {
+    public LimitedSortedSet(@NonNull Comparator<? super T> comparator, int limit) {
         super(comparator, limit);
     }
 

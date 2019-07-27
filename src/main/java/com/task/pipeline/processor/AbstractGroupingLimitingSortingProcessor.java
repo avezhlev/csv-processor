@@ -1,6 +1,7 @@
 package com.task.pipeline.processor;
 
-import com.task.pipeline.processor.util.SimpleLimitedSortedSet;
+import com.task.pipeline.EntitiesProcessor;
+import com.task.pipeline.processor.util.collection.LimitedSortedSet;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +40,8 @@ public abstract class AbstractGroupingLimitingSortingProcessor<T, ID> implements
 
     /*package-private*/ Stream<? extends T> limitSort(Stream<? extends T> entities) {
         return entities.parallel().collect(Collector.of(
-                () -> new SimpleLimitedSortedSet<T>(comparator, totalLimit),
-                SimpleLimitedSortedSet::add, SimpleLimitedSortedSet::merge, SimpleLimitedSortedSet::stream,
+                () -> new LimitedSortedSet<T>(comparator, totalLimit),
+                LimitedSortedSet::add, LimitedSortedSet::merge, LimitedSortedSet::stream,
                 Collector.Characteristics.UNORDERED));
     }
 
