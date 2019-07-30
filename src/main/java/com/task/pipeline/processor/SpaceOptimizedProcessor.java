@@ -28,11 +28,6 @@ public class SpaceOptimizedProcessor<T, ID> extends AbstractGroupingLimitingSort
         super(idMapper, comparator, groupLimit, totalLimit);
     }
 
-    public static <T, ID> SpaceOptimizedProcessor<T, ID> withDefaultLimits(Function<? super T, ? extends ID> idMapper,
-                                                                           Comparator<? super T> comparator) {
-        return new SpaceOptimizedProcessor<>(idMapper, comparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
-    }
-
     @Override
     protected Stream<? extends T> groupLimitSort(Stream<? extends T> entities) {
         return entities.parallel().collect(Collector.of(

@@ -26,11 +26,6 @@ public class TimeOptimizedForkJoinGroupingProcessor<T, ID> extends AbstractGroup
         super(idMapper, comparator, groupLimit, totalLimit);
     }
 
-    public static <T, ID> TimeOptimizedForkJoinGroupingProcessor<T, ID> withDefaultLimits(Function<? super T, ? extends ID> idMapper,
-                                                                                          Comparator<? super T> comparator) {
-        return new TimeOptimizedForkJoinGroupingProcessor<>(idMapper, comparator, DEFAULT_GROUP_LIMIT, DEFAULT_TOTAL_LIMIT);
-    }
-
     @Override
     protected Stream<? extends T> groupLimitSort(Stream<? extends T> entities) {
         return limitSort(entities.parallel().collect(Collector.of(

@@ -15,9 +15,6 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public abstract class AbstractGroupingLimitingSortingProcessor<T, ID> implements EntitiesProcessor<T> {
 
-    public static final int DEFAULT_GROUP_LIMIT = 20;
-    public static final int DEFAULT_TOTAL_LIMIT = 1000;
-
     @NonNull
     private final Function<? super T, ? extends ID> idMapper;
     @NonNull
