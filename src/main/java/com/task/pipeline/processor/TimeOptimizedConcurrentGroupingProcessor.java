@@ -29,7 +29,7 @@ public class TimeOptimizedConcurrentGroupingProcessor<T, ID> extends AbstractGro
     @Override
     protected Stream<? extends T> groupLimitSort(Stream<? extends T> entities) {
         return limitSort(entities.parallel().collect(Collector.of(
-                () -> new EntitiesGrouper<>(
+                () -> EntitiesGrouper.forConcurrentUsage(
                         getIdMapper(),
                         () -> new LimitedSortedSet<T>(getComparator(), getGroupLimit()),
                         LimitedSortedSet::add),

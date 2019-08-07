@@ -29,7 +29,7 @@ public class TimeOptimizedForkJoinGroupingProcessor<T, ID> extends AbstractGroup
     @Override
     protected Stream<? extends T> groupLimitSort(Stream<? extends T> entities) {
         return limitSort(entities.parallel().collect(Collector.of(
-                () -> new EntitiesGrouper<>(
+                () -> EntitiesGrouper.forForkJoinUsage(
                         getIdMapper(),
                         () -> new LimitedSortedSet<T>(getComparator(), getGroupLimit()),
                         LimitedSortedSet::add, LimitedSortedSet::merge),

@@ -21,8 +21,8 @@ public class EntitiesGrouper<T, ID, C extends Collection<T>> {
 
     private final Map<ID, C> groups;
 
-    public EntitiesGrouper(@NonNull Function<? super T, ? extends ID> idMapper, @NonNull Supplier<C> groupSupplier,
-                           @NonNull BiConsumer<C, T> groupAccumulator, BinaryOperator<C> groupsCombiner) {
+    private EntitiesGrouper(@NonNull Function<? super T, ? extends ID> idMapper, @NonNull Supplier<C> groupSupplier,
+                            @NonNull BiConsumer<C, T> groupAccumulator, BinaryOperator<C> groupsCombiner) {
         this.idMapper = idMapper;
         this.groupSupplier = groupSupplier;
         this.groupAccumulator = groupAccumulator;
@@ -37,8 +37,15 @@ public class EntitiesGrouper<T, ID, C extends Collection<T>> {
         }
     }
 
-    public EntitiesGrouper(Function<? super T, ? extends ID> idMapper, Supplier<C> groupSupplier, BiConsumer<C, T> groupAccumulator) {
-        this(idMapper, groupSupplier, groupAccumulator, null);
+    public static <T, ID, C extends Collection<T>> EntitiesGrouper<T, ID, C>
+    forConcurrentUsage(Function<? super T, ? extends ID> idMapper, Supplier<C> groupSupplier, BiConsumer<C, T> groupAccumulator) {
+        return new EntitiesGrouper<>(idMapper, groupSupplier, groupAccumulator, null);
+    }
+
+    public static <T, ID, C extends Collection<T>> EntitiesGrouper<T, ID, C>
+    forForkJoinUsage(Function<? super T, ? extends ID> idMapper, Supplier<C> groupSupplier,
+                     BiConsumer<C, T> groupAccumulator, BinaryOperator<C> groupsCombiner) {
+        return new EntitiesGrouper<>(idMapper, groupSupplier, groupAccumulator, groupsCombiner);
     }
 
     public void add(T item) {
