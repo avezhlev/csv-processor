@@ -59,8 +59,13 @@ public class EntitiesGrouper<T, ID, C extends Collection<T>> {
     }
 
     public EntitiesGrouper<T, ID, C> merge(EntitiesGrouper<T, ID, C> other) {
-        other.groups.forEach((id, group) -> groups.merge(id, group, groupsCombiner));
-        return this;
+        if (groups.size() > other.groups.size()) {
+            other.groups.forEach((id, group) -> groups.merge(id, group, groupsCombiner));
+            return this;
+        } else {
+            groups.forEach((id, group) -> other.groups.merge(id, group, groupsCombiner));
+            return other;
+        }
     }
 
     public Stream<? extends T> stream() {
