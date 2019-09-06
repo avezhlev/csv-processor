@@ -6,7 +6,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +17,9 @@ import java.util.stream.Stream;
 
 public class ProcessorsTest {
 
+    public static final Comparator<SimpleEntity> DEFAULT_COMPARATOR =
+            Comparator.comparingDouble(SimpleEntity::getPrice).thenComparingInt(SimpleEntity::getId);
+
     @ParameterizedTest
     @ValueSource(classes = {
             TimeOptimizedConcurrentGroupingProcessor.class,
@@ -25,7 +27,7 @@ public class ProcessorsTest {
             SpaceOptimizedProcessor.class})
     public void outputMustBeSortedAccordingToComparator(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
+        Comparator<SimpleEntity> comparator = DEFAULT_COMPARATOR;
         int totalLimit = 1000;
         int inputSize = totalLimit;
         EntitiesProcessor<SimpleEntity> processor = processor(impl, comparator, Integer.MAX_VALUE, totalLimit);
@@ -130,7 +132,7 @@ public class ProcessorsTest {
             SpaceOptimizedProcessor.class})
     public void outputMustBeSortedAccordingToComparatorAndLimitedIfInputExceedsTotalLimitAndAnyInputGroupSizeExceedsGroupLimit(Class<? extends EntitiesProcessor> impl) {
         // given
-        Comparator<SimpleEntity> comparator = Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId);
+        Comparator<SimpleEntity> comparator = DEFAULT_COMPARATOR;
         int groupLimit = 20;
         int totalLimit = 1000;
         int groupSize = (int) (groupLimit * 1.5);
@@ -168,7 +170,7 @@ public class ProcessorsTest {
 
     private EntitiesProcessor<SimpleEntity> processor(Class<? extends EntitiesProcessor> impl,
                                                       int maxEntitiesPerGroup, int maxTotalEntities) {
-        return processor(impl, Comparator.comparing(SimpleEntity::getPrice).thenComparing(SimpleEntity::getId), maxEntitiesPerGroup, maxTotalEntities);
+        return processor(impl, DEFAULT_COMPARATOR, maxEntitiesPerGroup, maxTotalEntities);
     }
 
     @SuppressWarnings("unchecked")
@@ -180,7 +182,7 @@ public class ProcessorsTest {
                     .newInstance(
                             (Function<SimpleEntity, Integer>) SimpleEntity::getId, comparator,
                             maxEntitiesPerGroup, maxTotalEntities);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

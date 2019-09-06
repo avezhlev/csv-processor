@@ -46,8 +46,8 @@ public class Runner {
                 FromDirCsvFilesProducer.withDefaultFormat(Product::parse, config.getInputDir()),
                 config.getProcessor().instantiate(
                         Product::getId,
-                        Comparator.comparing(Product::getPrice)
-                                .thenComparing(Product::getId)
+                        Comparator.comparingDouble(Product::getPrice)
+                                .thenComparingInt(Product::getId)
                                 .thenComparing(Product::getCondition)
                                 .thenComparing(Product::getState),
                         config.getGroupLimit(), config.getLimit()),
