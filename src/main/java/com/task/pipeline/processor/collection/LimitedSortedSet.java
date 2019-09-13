@@ -1,4 +1,4 @@
-package com.task.pipeline.processor.util.collection;
+package com.task.pipeline.processor.collection;
 
 import lombok.NonNull;
 

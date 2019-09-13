@@ -1,6 +1,6 @@
 package com.task.pipeline.processor;
 
-import com.task.pipeline.processor.util.collection.LimitedSortedSet;
+import com.task.pipeline.processor.collection.LimitedSortedSet;
 import lombok.NonNull;
 
 import java.util.Comparator;
